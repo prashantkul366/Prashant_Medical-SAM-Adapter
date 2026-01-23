@@ -53,22 +53,53 @@ def main():
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #learning rate decay
 
     '''load pretrained model'''
+    # if args.weights != 0:
+    #     print(f'=> resuming from {args.weights}')
+    #     assert os.path.exists(args.weights)
+    #     checkpoint_file = os.path.join(args.weights)
+    #     assert os.path.exists(checkpoint_file)
+    #     loc = 'cuda:{}'.format(args.gpu_device)
+    #     checkpoint = torch.load(checkpoint_file, map_location=loc)
+    #     start_epoch = checkpoint['epoch']
+    #     best_tol = checkpoint['best_tol']
+
+    #     net.load_state_dict(checkpoint['state_dict'],strict=False)
+    #     # optimizer.load_state_dict(checkpoint['optimizer'], strict=False)
+
+    #     args.path_helper = checkpoint['path_helper']
+    #     logger = create_logger(args.path_helper['log_path'])
+    #     print(f'=> loaded checkpoint {checkpoint_file} (epoch {start_epoch})')
+    
+    start_epoch = 0
+    best_dice = 0.0
+    best_epoch = 0
+
     if args.weights != 0:
         print(f'=> resuming from {args.weights}')
         assert os.path.exists(args.weights)
-        checkpoint_file = os.path.join(args.weights)
-        assert os.path.exists(checkpoint_file)
-        loc = 'cuda:{}'.format(args.gpu_device)
-        checkpoint = torch.load(checkpoint_file, map_location=loc)
-        start_epoch = checkpoint['epoch']
-        best_tol = checkpoint['best_tol']
 
-        net.load_state_dict(checkpoint['state_dict'],strict=False)
-        # optimizer.load_state_dict(checkpoint['optimizer'], strict=False)
+        checkpoint = torch.load(args.weights, map_location=loc)
 
-        args.path_helper = checkpoint['path_helper']
-        logger = create_logger(args.path_helper['log_path'])
-        print(f'=> loaded checkpoint {checkpoint_file} (epoch {start_epoch})')
+        net.load_state_dict(checkpoint['state_dict'], strict=False)
+
+        if 'optimizer' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+
+        start_epoch = checkpoint.get('epoch', 0) + 1
+        best_dice = checkpoint.get('best_dice', 0.0)
+        best_epoch = checkpoint.get('best_epoch', 0)
+        early_stop_patience = checkpoint.get(
+            'early_stop_patience',
+            early_stop_patience
+        )
+
+        args.path_helper = checkpoint.get('path_helper', args.path_helper)
+
+        logger.info(
+            f"Resumed training from epoch {start_epoch}\n"
+            f"Best Dice so far: {best_dice:.4f} (epoch {best_epoch})\n"
+            f"Early stop patience: {early_stop_patience}"
+        )
 
     args.path_helper = set_log_dir('logs', args.exp_name)
     logger = create_logger(args.path_helper['log_path'])
@@ -103,7 +134,8 @@ def main():
     max_epochs = 1000
 
 
-    for epoch in range(max_epochs):
+    # for epoch in range(max_epochs):
+    for epoch in range(start_epoch, max_epochs):
         print(f'\nEpoch: {epoch}/{max_epochs} || Learning Rate: {scheduler.get_last_lr()[0]}')
         if epoch < 5:
             if args.dataset != 'REFUGE':
@@ -178,12 +210,15 @@ def main():
                         'state_dict': sd,
                         'optimizer': optimizer.state_dict(),
                         'best_dice': best_dice,
+                        'best_epoch': best_epoch,
+                        'early_stop_patience': early_stop_patience,
                         'path_helper': args.path_helper,
                     },
                     True,
                     args.path_helper['ckpt_path'],
                     filename="best_dice_checkpoint.pth"
                 )
+
 
             else:
                 logger.info(
