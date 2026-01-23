@@ -211,12 +211,28 @@ def train_sam(args, net: nn.Module, optimizer, train_loader,
             optimizer.zero_grad()
 
             '''vis images'''
-            if vis:
-                if ind % vis == 0:
-                    namecat = 'Train'
-                    for na in name[:2]:
-                        namecat = namecat + na.split('/')[-1].split('.')[0] + '+'
-                    vis_image(origin_imgs/255,pred,masks, os.path.join(args.path_helper['sample_path'], namecat+'epoch+' +str(epoch) + '.jpg'), reverse=False, points=showp)
+            if vis is not None and vis > 0 and (ind % vis == 0):
+                namecat = 'Train'
+                for na in name[:2]:
+                    namecat = namecat + na.split('/')[-1].split('.')[0] + '+'
+                vis_image(
+                    origin_imgs / 255,
+                    pred,
+                    masks,
+                    os.path.join(
+                        args.path_helper['sample_path'],
+                        namecat + 'epoch+' + str(epoch) + '.jpg'
+                    ),
+                    reverse=False,
+                    points=showp
+                )
+
+            # if vis:
+            #     if ind % vis == 0:
+            #         namecat = 'Train'
+            #         for na in name[:2]:
+            #             namecat = namecat + na.split('/')[-1].split('.')[0] + '+'
+            #         vis_image(origin_imgs/255,pred,masks, os.path.join(args.path_helper['sample_path'], namecat+'epoch+' +str(epoch) + '.jpg'), reverse=False, points=showp)
 
             pbar.update()
 
@@ -358,15 +374,31 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                     tot += lossfunc(pred, masks) * cur_bsz
 
                     '''vis images'''
-                    if ind % args.vis == 0:
-                        namecat = 'Test'
-                        for na in name[:2
+                    # if ind % args.vis == 0:
+                    #     namecat = 'Test'
+                    #     for na in name[:2
                         
-                        ]:
+                    #     ]:
+                    #         img_name = na.split('/')[-1].split('.')[0]
+                    #         namecat = namecat + img_name + '+'
+                    #     vis_image(origin_imgs/255,pred, masks, os.path.join(args.path_helper['sample_path'], namecat+'epoch+' +str(epoch) + '.jpg'), reverse=False, points=showp)
+                    
+                    if args.vis is not None and args.vis > 0 and (ind % args.vis == 0):
+                        namecat = 'Test'
+                        for na in name[:2]:
                             img_name = na.split('/')[-1].split('.')[0]
                             namecat = namecat + img_name + '+'
-                        vis_image(origin_imgs/255,pred, masks, os.path.join(args.path_helper['sample_path'], namecat+'epoch+' +str(epoch) + '.jpg'), reverse=False, points=showp)
-                    
+                        vis_image(
+                            origin_imgs / 255,
+                            pred,
+                            masks,
+                            os.path.join(
+                                args.path_helper['sample_path'],
+                                namecat + 'epoch+' + str(epoch) + '.jpg'
+                            ),
+                            reverse=False,
+                            points=showp
+                        )
 
                     temp = eval_seg(pred, masks, threshold)
                     temp = tuple([number * cur_bsz for number in temp])
