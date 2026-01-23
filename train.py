@@ -136,7 +136,7 @@ def main():
 
     # for epoch in range(max_epochs):
     for epoch in range(start_epoch, max_epochs):
-        print(f'\nEpoch: {epoch}/{max_epochs} || Learning Rate: {scheduler.get_last_lr()[0]}')
+        print(f'\nEpoch: {epoch}/{max_epochs}')
         if epoch < 5:
             if args.dataset != 'REFUGE':
                 tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
@@ -218,6 +218,7 @@ def main():
                     args.path_helper['ckpt_path'],
                     filename="best_dice_checkpoint.pth"
                 )
+                print("saved best dice checkpoint at path: ", args.path_helper['ckpt_path'])
 
 
             else:
