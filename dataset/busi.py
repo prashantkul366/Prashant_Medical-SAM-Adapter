@@ -13,6 +13,8 @@ class BUSI(Dataset):
         self.names = sorted(os.listdir(self.image_dir))
         self.img_size = args.image_size
         self.prompt = prompt
+        self.out_size = args.out_size
+        self.prompt = prompt
         
         # ===== PRINT DATASET INFO =====
         print(f"[BUSI Dataset]")
@@ -31,8 +33,11 @@ class BUSI(Dataset):
         img = Image.open(os.path.join(self.image_dir, name)).convert("RGB")
         mask = Image.open(os.path.join(self.mask_dir, name)).convert("L")
 
-        img = img.resize((self.img_size, self.img_size))
-        mask = mask.resize((self.img_size, self.img_size))
+        # img = img.resize((self.img_size, self.img_size))
+        # mask = mask.resize((self.img_size, self.img_size))
+
+        img  = img.resize((self.img_size, self.img_size))
+        mask = mask.resize((self.out_size, self.out_size))
 
         img = torch.from_numpy(np.array(img)).permute(2,0,1).float() / 255.
         mask = torch.from_numpy(np.array(mask) > 0).unsqueeze(0).float()
