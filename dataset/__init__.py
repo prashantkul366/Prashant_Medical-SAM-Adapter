@@ -215,7 +215,7 @@ def get_dataloader(args):
     elif args.dataset.lower() == "busi":
         train_set = BUSI(args, args.data_path, mode="train")
         test_set  = BUSI(args, args.data_path, mode="test")
-        val_set = BUSI(args, args.data_path, mode="val")
+        val_set = BUSI(args, args.data_path, mode="test")
 
     elif args.dataset == 'lnq':
         '''lnq data'''
