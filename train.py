@@ -97,6 +97,12 @@ def main():
     best_tol = 1e4
     best_dice = 0.0
 
+    best_dice = 0.0
+    best_epoch = 0
+    early_stop_patience = 100
+    max_epochs = 1000
+
+
     for epoch in range(settings.EPOCH):
 
         if epoch < 5:
@@ -113,35 +119,149 @@ def main():
         logger.info(f'Train loss: {loss} || @ epoch {epoch}.')
         time_end = time.time()
         print('time_for_training ', time_end - time_start)
-
+        
         net.eval()
-        if epoch and epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
+        if (epoch % args.val_freq == 0) or (epoch == max_epochs - 1):
+
             if args.dataset != 'REFUGE':
-                tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
-                logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+                tol, (eiou, edice) = function.validation_sam(
+                    args, nice_test_loader, epoch, net, writer
+                )
             else:
-                tol, (eiou_cup, eiou_disc, edice_cup, edice_disc) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
-                logger.info(f'Total score: {tol}, IOU_CUP: {eiou_cup}, IOU_DISC: {eiou_disc}, DICE_CUP: {edice_cup}, DICE_DISC: {edice_disc} || @ epoch {epoch}.')
+                tol, (eiou_cup, eiou_disc, edice_cup, edice_disc) = \
+                    function.validation_sam(args, nice_test_loader, epoch, net, writer)
+                edice = (edice_cup + edice_disc) / 2.0  # single score
+
+            # ==========================
+            # Print Dice info
+            # ==========================
+            logger.info(
+                f"[Epoch {epoch}] "
+                f"Val Dice: {edice:.4f} | "
+                f"Best Dice: {best_dice:.4f}"
+            )
 
             if args.distributed != 'none':
                 sd = net.module.state_dict()
             else:
                 sd = net.state_dict()
 
+            # ==========================
+            # Best model logic
+            # ==========================
             if edice > best_dice:
-                best_tol = tol
-                is_best = True
+                logger.info(
+                    f" Dice improved: {best_dice:.4f} → {edice:.4f} "
+                    f"(saving checkpoint)"
+                )
 
-                save_checkpoint({
-                'epoch': epoch + 1,
-                'model': args.net,
-                'state_dict': sd,
-                'optimizer': optimizer.state_dict(),
-                'best_tol': best_dice,
-                'path_helper': args.path_helper,
-            }, is_best, args.path_helper['ckpt_path'], filename="best_dice_checkpoint.pth")
+                best_dice = edice
+                best_epoch = epoch
+
+                save_checkpoint(
+                    {
+                        'epoch': epoch,
+                        'model': args.net,
+                        'state_dict': sd,
+                        'optimizer': optimizer.state_dict(),
+                        'best_dice': best_dice,
+                        'path_helper': args.path_helper,
+                    },
+                    is_best=True,
+                    ckpt_path=args.path_helper['ckpt_path'],
+                    filename="best_dice_checkpoint.pth"
+                )
             else:
-                is_best = False
+                logger.info(
+                    f" No improvement. Best Dice: {best_dice:.4f} "
+                    f"(epoch {best_epoch})"
+                )
+
+            # ==========================
+            # Early stopping
+            # ==========================
+            early_stop_count = epoch - best_epoch
+
+            logger.info(
+                f" Early stopping counter: "
+                f"{early_stop_count}/{early_stop_patience}"
+            )
+
+            if early_stop_count >= early_stop_patience:
+                logger.info(
+                    f" Early stopping triggered at epoch {epoch}. "
+                    f"Best Dice: {best_dice:.4f} (epoch {best_epoch})"
+                )
+                break
+
+        # net.eval()
+        # if epoch and epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
+        #     if args.dataset != 'REFUGE':
+        #         tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
+        #         logger.info(f'Total score: {tol}, IOU: {eiou}, DICE: {edice} || @ epoch {epoch}.')
+        #     else:
+        #         tol, (eiou_cup, eiou_disc, edice_cup, edice_disc) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
+        #         logger.info(f'Total score: {tol}, IOU_CUP: {eiou_cup}, IOU_DISC: {eiou_disc}, DICE_CUP: {edice_cup}, DICE_DISC: {edice_disc} || @ epoch {epoch}.')
+
+        #     if args.distributed != 'none':
+        #         sd = net.module.state_dict()
+        #     else:
+        #         sd = net.state_dict()
+
+        #     # if edice > best_dice:
+        #     #     best_tol = tol
+        #     #     is_best = True
+
+        #     #     save_checkpoint({
+        #     #     'epoch': epoch + 1,
+        #     #     'model': args.net,
+        #     #     'state_dict': sd,
+        #     #     'optimizer': optimizer.state_dict(),
+        #     #     'best_tol': best_dice,
+        #     #     'path_helper': args.path_helper,
+        #     # }, is_best, args.path_helper['ckpt_path'], filename="best_dice_checkpoint.pth")
+        #     # else:
+        #     #     is_best = False
+
+        #     if edice > best_dice:
+        #         logger.info(
+        #             f" Saving best model: Dice improved "
+        #             f"{best_dice:.4f} → {edice:.4f}"
+        #         )
+
+        #         best_dice = edice
+        #         best_epoch = epoch
+
+        #         save_checkpoint({
+        #             'epoch': epoch,
+        #             'model': args.net,
+        #             'state_dict': sd,
+        #             'optimizer': optimizer.state_dict(),
+        #             'best_dice': best_dice,
+        #             'path_helper': args.path_helper,
+        #         }, is_best=True,
+        #         ckpt_path=args.path_helper['ckpt_path'],
+        #         filename="best_dice_checkpoint.pth")
+
+        #     else:
+        #         logger.info(
+        #             f" Dice did not improve. Best: {best_dice:.4f} "
+        #             f" @ epoch {best_epoch}"
+        #         )
+
+        #     early_stop_count = epoch - best_epoch
+
+        #     logger.info(
+        #         f" Early stopping counter: "
+        #         f"{early_stop_count}/{early_stop_patience}"
+        #     )
+
+        #     if early_stop_count >= early_stop_patience:
+        #         logger.info(" Early stopping triggered. Training stopped.")
+        #         break
+
+                    
+
 
     writer.close()
 

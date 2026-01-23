@@ -18,6 +18,7 @@ from .segrap import SegRap
 from .stare import STARE
 from .toothfairy import ToothFairy
 from .wbc import WBC
+from .busi import BUSI
 
 
 def get_dataloader(args):
@@ -210,6 +211,11 @@ def get_dataloader(args):
         nice_train_loader = DataLoader(dataset, batch_size=args.b, sampler=train_sampler, num_workers=8, pin_memory=True)
         nice_test_loader = DataLoader(dataset, batch_size=args.b, sampler=test_sampler, num_workers=8, pin_memory=True)
         '''end'''
+
+    elif args.dataset.lower() == "busi":
+        train_set = BUSI(args, args.data_path, mode="train")
+        test_set  = BUSI(args, args.data_path, mode="test")
+        val_set = BUSI(args, args.data_path, mode="val")
 
     elif args.dataset == 'lnq':
         '''lnq data'''
