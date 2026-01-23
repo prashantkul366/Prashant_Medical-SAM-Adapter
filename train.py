@@ -158,6 +158,19 @@ def main():
                 best_dice = edice
                 best_epoch = epoch
 
+                # save_checkpoint(
+                #     {
+                #         'epoch': epoch,
+                #         'model': args.net,
+                #         'state_dict': sd,
+                #         'optimizer': optimizer.state_dict(),
+                #         'best_dice': best_dice,
+                #         'path_helper': args.path_helper,
+                #     },
+                #     is_best=True,
+                #     ckpt_path=args.path_helper['ckpt_path'],
+                #     filename="best_dice_checkpoint.pth"
+                # )
                 save_checkpoint(
                     {
                         'epoch': epoch,
@@ -167,10 +180,11 @@ def main():
                         'best_dice': best_dice,
                         'path_helper': args.path_helper,
                     },
-                    is_best=True,
-                    ckpt_path=args.path_helper['ckpt_path'],
+                    True,
+                    args.path_helper['ckpt_path'],
                     filename="best_dice_checkpoint.pth"
                 )
+
             else:
                 logger.info(
                     f" No improvement. Best Dice: {best_dice:.4f} "
