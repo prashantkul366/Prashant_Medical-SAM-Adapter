@@ -26,24 +26,29 @@ class BUSI(Dataset):
 
     def __len__(self):
         return len(self.names)
-
+    
     def __getitem__(self, idx):
-        name = self.names[idx]
+        name = self.names[idx]   # e.g. ISIC_0012255.jpg
 
+        # ----- Image -----
         img = Image.open(os.path.join(self.image_dir, name)).convert("RGB")
-        mask = Image.open(os.path.join(self.mask_dir, name)).convert("L")
 
-        # img = img.resize((self.img_size, self.img_size))
-        # mask = mask.resize((self.img_size, self.img_size))
+        # ----- Mask (.png) -----
+        base_name = os.path.splitext(name)[0]
+        mask_name = base_name + ".png"
+        mask = Image.open(os.path.join(self.mask_dir, mask_name)).convert("L")
 
+        # Resize
         img  = img.resize((self.img_size, self.img_size))
         mask = mask.resize((self.out_size, self.out_size))
 
-        img = torch.from_numpy(np.array(img)).permute(2,0,1).float() / 255.
+        # To tensor
+        img = torch.from_numpy(np.array(img)).permute(2, 0, 1).float() / 255.
         mask = torch.from_numpy(np.array(mask) > 0).unsqueeze(0).float()
 
+        # Prompt
         point_label = 1
-        pt = torch.tensor([[self.img_size//2, self.img_size//2]])
+        pt = torch.tensor([[self.img_size // 2, self.img_size // 2]])
 
         if self.prompt == "click":
             point_label, pt = random_click(mask.squeeze().numpy(), point_label)
@@ -55,3 +60,33 @@ class BUSI(Dataset):
             "pt": pt,
             "image_meta_dict": {"filename_or_obj": name}
         }
+
+
+    # def __getitem__(self, idx):
+    #     name = self.names[idx]
+
+    #     img = Image.open(os.path.join(self.image_dir, name)).convert("RGB")
+    #     mask = Image.open(os.path.join(self.mask_dir, name)).convert("L")
+
+    #     # img = img.resize((self.img_size, self.img_size))
+    #     # mask = mask.resize((self.img_size, self.img_size))
+
+    #     img  = img.resize((self.img_size, self.img_size))
+    #     mask = mask.resize((self.out_size, self.out_size))
+
+    #     img = torch.from_numpy(np.array(img)).permute(2,0,1).float() / 255.
+    #     mask = torch.from_numpy(np.array(mask) > 0).unsqueeze(0).float()
+
+    #     point_label = 1
+    #     pt = torch.tensor([[self.img_size//2, self.img_size//2]])
+
+    #     if self.prompt == "click":
+    #         point_label, pt = random_click(mask.squeeze().numpy(), point_label)
+
+    #     return {
+    #         "image": img,
+    #         "label": mask,
+    #         "p_label": point_label,
+    #         "pt": pt,
+    #         "image_meta_dict": {"filename_or_obj": name}
+    #     }
