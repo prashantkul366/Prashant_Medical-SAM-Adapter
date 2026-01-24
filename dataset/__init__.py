@@ -252,7 +252,7 @@ def get_dataloader(args):
         # val_set = BUSI(args, args.data_path, mode="test")
 
         train_set = BUSI(args, args.data_path, mode="train")
-        val_set   = BUSI(args, args.data_path, mode="test")  # test = val
+        val_set   = BUSI(args, args.data_path, mode="val")  # test = val
         # test_set   = BUSI(args, args.data_path, mode="test")  # test = val
 
         nice_train_loader = DataLoader(
