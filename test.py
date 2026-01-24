@@ -49,7 +49,9 @@ def main():
         distribution=args.distributed
     )
 
+    print("=> loading checkpoint from", args.weights)
     ckpt = torch.load(args.weights, map_location=device)
+    # print("=> loaded checkpoint")
     net.load_state_dict(ckpt["state_dict"], strict=False)
     net.eval()
 
