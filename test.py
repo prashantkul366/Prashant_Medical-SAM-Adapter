@@ -75,8 +75,18 @@ def main():
         for pack in tqdm(test_loader, desc="Testing"):
             imgs = pack["image"].to(device)
             masks = pack["label"].to(device)
-            pt = pack["pt"]
-            pl = pack["p_label"]
+            # pt = pack["pt"]
+            # pl = pack["p_label"]
+            
+            pt = pack["pt"].to(device)
+            pl = pack["p_label"].to(device)
+
+            if pt.dim() == 2:      # [B,2] → [B,1,2]
+                pt = pt.unsqueeze(1)
+
+            if pl.dim() == 1:      # [B] → [B,1]
+                pl = pl.unsqueeze(1)
+
 
             # SAM forward
             imgs_p = net.preprocess(imgs)
