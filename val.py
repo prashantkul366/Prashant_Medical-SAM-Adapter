@@ -33,6 +33,24 @@ from torch.utils.data import DataLoader, random_split
 from utils import *
 import function
 
+def dice_uc(pred, gt, eps=1e-5):
+    pred = pred.astype(np.float32)
+    gt   = gt.astype(np.float32)
+    return 2.0 * np.sum(pred * gt) / (np.sum(pred) + np.sum(gt) + eps)
+
+def iou_uc(pred, gt, eps=1e-7):
+    pred = pred.astype(bool)
+    gt   = gt.astype(bool)
+    inter = np.logical_and(pred, gt).sum()
+    union = np.logical_or(pred, gt).sum()
+    return inter / (union + eps)
+
+def confusion_uc(pred, gt):
+    TP = ((pred == 1) & (gt == 1)).sum()
+    TN = ((pred == 0) & (gt == 0)).sum()
+    FP = ((pred == 1) & (gt == 0)).sum()
+    FN = ((pred == 0) & (gt == 1)).sum()
+    return TP, TN, FP, FN
 
 def main():
     args = cfg.parse_args()

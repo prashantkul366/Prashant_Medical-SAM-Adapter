@@ -44,7 +44,7 @@ def get_dataloader(args):
         transforms.ToTensor(),
     ])
     
-    if args.dataset == 'isic':
+    if args.dataset == 'isic1':
         '''isic data'''
         isic_train_dataset = ISIC2016(args, args.data_path, transform = transform_train, transform_msk= transform_train_seg, mode = 'Training')
         isic_test_dataset = ISIC2016(args, args.data_path, transform = transform_test, transform_msk= transform_test_seg, mode = 'Test')
@@ -52,6 +52,40 @@ def get_dataloader(args):
         nice_train_loader = DataLoader(isic_train_dataset, batch_size=args.b, shuffle=True, num_workers=8, pin_memory=True)
         nice_test_loader = DataLoader(isic_test_dataset, batch_size=args.b, shuffle=False, num_workers=8, pin_memory=True)
         '''end'''
+
+    elif args.dataset == 'isic':
+        isic_train_dataset = ISIC2016(
+            args,
+            args.data_path,
+            transform=transform_train,
+            transform_msk=transform_train_seg,
+            mode="train"
+        )
+
+        isic_val_dataset = ISIC2016(
+            args,
+            args.data_path,
+            transform=transform_test,
+            transform_msk=transform_test_seg,
+            mode="val"
+        )
+
+        nice_train_loader = DataLoader(
+            isic_train_dataset,
+            batch_size=args.b,
+            shuffle=True,
+            num_workers=8,
+            pin_memory=True
+        )
+
+        nice_test_loader = DataLoader(
+            isic_val_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=8,
+            pin_memory=True
+        )
+
 
     elif args.dataset == 'decathlon':
         nice_train_loader, nice_test_loader, transform_train, transform_val, train_list, val_list = get_decath_loader(args)
