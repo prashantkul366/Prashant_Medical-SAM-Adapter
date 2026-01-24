@@ -11,26 +11,26 @@ from function import validation_sam
 # -----------------------------
 # Metric helpers
 # -----------------------------
-def dice_score(pred, gt, eps=1e-7):
-    pred = pred.astype(np.bool_)
-    gt   = gt.astype(np.bool_)
-    inter = (pred & gt).sum()
-    return (2. * inter) / (pred.sum() + gt.sum() + eps)
+# def dice_score(pred, gt, eps=1e-7):
+#     pred = pred.astype(np.bool_)
+#     gt   = gt.astype(np.bool_)
+#     inter = (pred & gt).sum()
+#     return (2. * inter) / (pred.sum() + gt.sum() + eps)
 
-def iou_score(pred, gt, eps=1e-7):
-    pred = pred.astype(np.bool_)
-    gt   = gt.astype(np.bool_)
-    inter = (pred & gt).sum()
-    union = (pred | gt).sum()
-    return inter / (union + eps)
+# def iou_score(pred, gt, eps=1e-7):
+#     pred = pred.astype(np.bool_)
+#     gt   = gt.astype(np.bool_)
+#     inter = (pred & gt).sum()
+#     union = (pred | gt).sum()
+#     return inter / (union + eps)
 
-def specificity_score(pred, gt, eps=1e-7):
-    tn = ((pred == 0) & (gt == 0)).sum()
-    fp = ((pred == 1) & (gt == 0)).sum()
-    return tn / (tn + fp + eps)
+# def specificity_score(pred, gt, eps=1e-7):
+#     tn = ((pred == 0) & (gt == 0)).sum()
+#     fp = ((pred == 1) & (gt == 0)).sum()
+#     return tn / (tn + fp + eps)
 
-def accuracy_score_bin(pred, gt):
-    return (pred == gt).mean()
+# def accuracy_score_bin(pred, gt):
+#     return (pred == gt).mean()
 
 def dice_uc(pred, gt, eps=1e-5):
     pred = pred.astype(np.float32)
@@ -88,12 +88,6 @@ def main():
     spec_list = []
     acc_list = []
 
-    TP, TN, FP, FN = confusion_uc(pd, gt)
-
-    dice_list.append(dice_uc(pd, gt))
-    iou_list.append(iou_uc(pd, gt))
-    spec_list.append(TN / (TN + FP + 1e-7))
-    acc_list.append((TP + TN) / (TP + TN + FP + FN + 1e-7))
 
     # -------- Inference --------
     with torch.no_grad():
@@ -142,10 +136,17 @@ def main():
             gt = masks.cpu().numpy().squeeze()
             pd = pred_bin.cpu().numpy().squeeze()
 
-            dice_list.append(dice_score(pd, gt))
-            iou_list.append(iou_score(pd, gt))
-            spec_list.append(specificity_score(pd, gt))
-            acc_list.append(accuracy_score_bin(pd, gt))
+            # dice_list.append(dice_score(pd, gt))
+            # iou_list.append(iou_score(pd, gt))
+            # spec_list.append(specificity_score(pd, gt))
+            # acc_list.append(accuracy_score_bin(pd, gt))
+                    
+            TP, TN, FP, FN = confusion_uc(pd, gt)
+
+            dice_list.append(dice_uc(pd, gt))
+            iou_list.append(iou_uc(pd, gt))
+            spec_list.append(TN / (TN + FP + 1e-7))
+            acc_list.append((TP + TN) / (TP + TN + FP + FN + 1e-7))
 
     # -------- Results --------
     print("\n===== TEST RESULTS =====")
