@@ -32,6 +32,24 @@ def specificity_score(pred, gt, eps=1e-7):
 def accuracy_score_bin(pred, gt):
     return (pred == gt).mean()
 
+def dice_uc(pred, gt, eps=1e-5):
+    pred = pred.astype(np.float32)
+    gt   = gt.astype(np.float32)
+    return 2.0 * np.sum(pred * gt) / (np.sum(pred) + np.sum(gt) + eps)
+
+def iou_uc(pred, gt, eps=1e-7):
+    pred = pred.astype(np.bool_)
+    gt   = gt.astype(np.bool_)
+    inter = np.logical_and(pred, gt).sum()
+    union = np.logical_or(pred, gt).sum()
+    return inter / (union + eps)
+
+def confusion_uc(pred, gt):
+    TP = ((pred == 1) & (gt == 1)).sum()
+    TN = ((pred == 0) & (gt == 0)).sum()
+    FP = ((pred == 1) & (gt == 0)).sum()
+    FN = ((pred == 0) & (gt == 1)).sum()
+    return TP, TN, FP, FN
 
 # -----------------------------
 # Main
@@ -70,6 +88,13 @@ def main():
     spec_list = []
     acc_list = []
 
+    TP, TN, FP, FN = confusion_uc(pd, gt)
+
+    dice_list.append(dice_uc(pd, gt))
+    iou_list.append(iou_uc(pd, gt))
+    spec_list.append(TN / (TN + FP + 1e-7))
+    acc_list.append((TP + TN) / (TP + TN + FP + FN + 1e-7))
+
     # -------- Inference --------
     with torch.no_grad():
         for pack in tqdm(test_loader, desc="Testing"):
@@ -77,7 +102,7 @@ def main():
             masks = pack["label"].to(device)
             # pt = pack["pt"]
             # pl = pack["p_label"]
-            
+
             pt = pack["pt"].to(device)
             pl = pack["p_label"].to(device)
 
