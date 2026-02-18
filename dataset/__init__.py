@@ -271,6 +271,30 @@ def get_dataloader(args):
             pin_memory=True
         )
 
+    elif args.dataset.lower() == "kvasir":
+        # train_set = BUSI(args, args.data_path, mode="train")
+        # test_set  = BUSI(args, args.data_path, mode="test")
+        # val_set = BUSI(args, args.data_path, mode="test")
+
+        train_set = BUSI(args, args.data_path, mode="train")
+        val_set   = BUSI(args, args.data_path, mode="val")  # test = val
+        # test_set   = BUSI(args, args.data_path, mode="test")  # test = val
+
+        nice_train_loader = DataLoader(
+            train_set,
+            batch_size=args.b,
+            shuffle=True,
+            num_workers=4,
+            pin_memory=True
+        )
+
+        nice_test_loader = DataLoader(
+            val_set,
+            batch_size=1,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True
+        )
 
     elif args.dataset == 'lnq':
         '''lnq data'''

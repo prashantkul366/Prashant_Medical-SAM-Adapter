@@ -17,7 +17,7 @@ class BUSI(Dataset):
         self.prompt = prompt
         
         # ===== PRINT DATASET INFO =====
-        print(f"[BUSI Dataset]")
+        print(f"[BUSI / Kvasir Dataset]")
         print(f"Mode        : {mode}")
         print(f"Data path   : {data_path}")
         print(f"Image dir   : {self.image_dir}")
