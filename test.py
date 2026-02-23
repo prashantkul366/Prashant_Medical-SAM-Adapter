@@ -76,7 +76,8 @@ def main():
     print(f"Loaded checkpoint from: {args.weights}")
 
     # -------- Dataset --------
-    test_set = BUSI(args, args.data_path, mode="test")
+    # test_set = BUSI(args, args.data_path, mode="test")
+    test_set = BUSI(args, args.data_path, mode="val")
     test_loader = torch.utils.data.DataLoader(
         test_set,
         batch_size=1,
