@@ -4,6 +4,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from utils import random_click
+import cv2
 
 class BUSI(Dataset):
     def __init__(self, args, data_path, mode="train", prompt="click"):
@@ -28,41 +29,41 @@ class BUSI(Dataset):
         return len(self.names)
     
     def __getitem__(self, idx):
-        name = self.names[idx]   # e.g. ISIC_0012255.jpg
 
-        # ----- Image -----
-        # img = Image.open(os.path.join(self.image_dir, name)).convert("RGB")
+        name = self.names[idx]          # e.g. ISIC_0012255.npy
 
+        # ---------- IMAGE (.npy → 4 channel) ----------
         base_name = os.path.splitext(name)[0]
-        img_path = os.path.join(self.image_dir, base_name + ".npy")
+        npy_name = base_name + ".npy"
 
-        img = np.load(img_path)     # shape: H W 4
+        img_np = np.load(os.path.join(self.image_dir, npy_name))   # H,W,4
 
-        # resize EACH channel
-        img_resized = np.zeros((self.img_size, self.img_size, img.shape[2]), dtype=np.float32)
-
-        for c in range(img.shape[2]):
-            img_resized[:, :, c] = np.array(
-                Image.fromarray(img[:, :, c]).resize((self.img_size, self.img_size))
+        # resize each channel
+        img_np_resized = np.zeros((self.img_size, self.img_size, 4), dtype=np.float32)
+        for c in range(4):
+            img_np_resized[:, :, c] = cv2.resize(
+                img_np[:, :, c],
+                (self.img_size, self.img_size),
+                interpolation=cv2.INTER_LINEAR
             )
 
-        img = torch.from_numpy(img_resized).permute(2, 0, 1).float()
+        img = torch.from_numpy(img_np_resized).permute(2, 0, 1).float()
 
-        
-        # ----- Mask (.png) -----
-        base_name = os.path.splitext(name)[0]
+
+        # ---------- MASK (.png) ----------
         mask_name = base_name + ".png"
         mask = Image.open(os.path.join(self.mask_dir, mask_name)).convert("L")
-
-        # Resize
-        # img  = img.resize((self.img_size, self.img_size))
         mask = mask.resize((self.out_size, self.out_size))
 
-        # To tensor
-        # img = torch.from_numpy(np.array(img)).permute(2, 0, 1).float() / 255.
         mask = torch.from_numpy(np.array(mask) > 0).unsqueeze(0).float()
 
-        # Prompt
+
+        # ---------- PRINT SIZE ----------
+        print("Image shape :", img.shape)
+        print("Mask shape  :", mask.shape)
+
+
+        # ---------- PROMPT ----------
         point_label = 1
         pt = torch.tensor([[self.img_size // 2, self.img_size // 2]])
 
