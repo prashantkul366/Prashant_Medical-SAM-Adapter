@@ -35,6 +35,37 @@ from conf import settings
 from dataset import *
 from utils import *
 
+def inflate_first_conv_4ch(net):
+    print("Inflating MedSAM first conv to 4 channels")
+
+    conv = net.image_encoder.patch_embed.proj   # SAM ViT first conv
+
+    old_weight = conv.weight.data     # [768,3,16,16]
+
+    new_conv = torch.nn.Conv2d(
+        4,
+        conv.out_channels,
+        kernel_size=conv.kernel_size,
+        stride=conv.stride,
+        padding=conv.padding,
+        bias=False
+    )
+
+    new_weight = torch.zeros(
+        (old_weight.shape[0], 4,
+         old_weight.shape[2], old_weight.shape[3])
+    )
+
+    new_weight[:, :3] = old_weight
+    new_weight[:, 3] = old_weight.mean(dim=1)
+
+    new_conv.weight = torch.nn.Parameter(new_weight)
+
+    net.image_encoder.patch_embed.proj = new_conv
+
+    print("✅ First conv changed to 4 channels")
+    return net
+
 def main():
     print("=========> Loading config <========= ")
     args = cfg.parse_args()
@@ -48,6 +79,7 @@ def main():
     if args.pretrain:
         weights = torch.load(args.pretrain)
         net.load_state_dict(weights,strict=False)
+        net = inflate_first_conv_4ch(net)
 
     optimizer = optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #learning rate decay
